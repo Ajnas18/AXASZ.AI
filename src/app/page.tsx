@@ -1,65 +1,144 @@
-import Image from "next/image";
+'use client';
+
+import React, { useState } from 'react';
+import { motion } from 'framer-motion';
+import { Activity, Loader2, AlertCircle } from 'lucide-react';
+import ImageUpload from '@/components/ui/ImageUpload';
+import EducationSlide from '@/components/ui/EducationSlide';
+import AnalysisDashboard from '@/components/dashboard/AnalysisDashboard';
+import StatsCards from '@/components/home/StatsCards';
+import FeaturesSection from '@/components/home/FeaturesSection';
+import Logo from '@/components/ui/Logo';
+import { AnalysisResult } from '@/types/analysis';
 
 export default function Home() {
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => {
+        const base64String = reader.result as string;
+        // Remove the data:image/jpeg;base64, prefix for the API
+        const base64Data = base64String.split(',')[1];
+        resolve(base64Data);
+      };
+      reader.onerror = (error) => reject(error);
+    });
+  };
+
+  const handleImageSelected = async (file: File | null) => {
+    setSelectedFile(file);
+    setAnalysisResult(null);
+    setError(null);
+    
+    if (!file) return;
+
+    try {
+      setIsAnalyzing(true);
+      
+      const base64Data = await fileToBase64(file);
+      
+      const response = await fetch('/api/analyze', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          imageBase64: base64Data,
+          mimeType: file.type,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to analyze chart');
+      }
+
+      setAnalysisResult(data);
+    } catch (err: any) {
+      console.error('Analysis error:', err);
+      setError(err.message || 'An unexpected error occurred during analysis.');
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
+    <main className="min-h-screen flex flex-col items-center w-full">
+      
+      {/* Hero Section */}
+      <section className="w-full relative py-20 px-4 md:px-8">
+        <div className="absolute inset-0 bg-gradient-to-b from-trading-green/5 to-transparent z-[-1]" />
+        
+        <motion.div 
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="w-full max-w-5xl mx-auto text-center"
+        >
+          <div className="flex justify-center mb-8">
+            <Logo width={64} height={64} className="scale-125" />
+          </div>
+          
+          <h1 className="text-5xl md:text-7xl font-black tracking-tight mb-6 text-white">
+            AI-Powered Trading Intelligence
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+          <p className="text-xl text-trading-text-muted max-w-3xl mx-auto mb-8 leading-relaxed">
+            Upload any trading chart and let our institutional-grade Vision AI identify key levels, 
+            market structure, and generate professional trading recommendations instantly.
           </p>
+          <p className="text-lg font-bold text-trading-green max-w-2xl mx-auto italic mb-12 bg-trading-green/10 border border-trading-green/20 py-3 px-6 rounded-full inline-block">
+            "Protect your capital first. Opportunities will always come again."
+          </p>
+        </motion.div>
+
+        {/* Upload Section */}
+        <div className="w-full max-w-3xl mx-auto relative z-10">
+          <ImageUpload 
+            onImageSelected={handleImageSelected} 
+            isAnalyzing={isAnalyzing} 
+          />
+          
+          {error && (
+            <motion.div 
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              className="mt-6 p-4 bg-trading-red/10 border border-trading-red/30 rounded-xl flex items-start gap-3"
+            >
+              <AlertCircle className="w-5 h-5 text-trading-red shrink-0 mt-0.5" />
+              <div className="text-trading-red text-sm">
+                <span className="font-bold">Analysis Failed</span>
+                <p className="mt-1 opacity-90">{error}</p>
+              </div>
+            </motion.div>
+          )}
+
+          {analysisResult && selectedFile && (
+            <div className="mt-12">
+              <AnalysisDashboard result={analysisResult} imageFile={selectedFile} />
+            </div>
+          )}
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+      </section>
+
+      {/* Stats Section */}
+      <div className="w-full border-y border-trading-border/50 bg-[#0A0A0A]/80 backdrop-blur-md">
+        <StatsCards />
+      </div>
+
+      {/* Features Section */}
+      <FeaturesSection />
+
+      {/* Education Slide */}
+      <div className="w-full px-4 mb-20">
+        <EducationSlide />
+      </div>
+
+    </main>
   );
 }
