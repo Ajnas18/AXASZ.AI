@@ -120,7 +120,7 @@ export default function Home() {
 
           {analysisResult && selectedFile && (
             <div className="mt-12">
-              <AnalysisDashboard result={analysisResult} imageFile={selectedFile} />
+              <AnalysisDashboard result={analysisResult} />
             </div>
           )}
         </div>
