@@ -7,10 +7,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 interface ImageUploadProps {
   onImageSelected: (file: File | null, previewUrl: string | null) => void;
-  isLoading?: boolean;
+  isAnalyzing?: boolean;
 }
 
-export default function ImageUpload({ onImageSelected, isLoading }: ImageUploadProps) {
+export default function ImageUpload({ onImageSelected, isAnalyzing }: ImageUploadProps) {
   const [preview, setPreview] = useState<string | null>(null);
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
@@ -29,7 +29,7 @@ export default function ImageUpload({ onImageSelected, isLoading }: ImageUploadP
       'image/jpeg': ['.jpg', '.jpeg'],
     },
     maxFiles: 1,
-    disabled: isLoading,
+    disabled: isAnalyzing,
   });
 
   const clearImage = (e: React.MouseEvent) => {
@@ -52,7 +52,7 @@ export default function ImageUpload({ onImageSelected, isLoading }: ImageUploadP
               exit={{ opacity: 0, y: -10 }}
               className={`relative p-8 w-full border-2 border-dashed rounded-xl flex flex-col items-center justify-center cursor-pointer transition-colors
                 ${isDragActive ? 'border-trading-accent bg-trading-accent/10' : 'border-trading-border bg-trading-card hover:border-trading-accent/50'}
-                ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}
+                ${isAnalyzing ? 'opacity-50 cursor-not-allowed' : ''}
                 glass-panel
               `}
             >
@@ -85,7 +85,7 @@ export default function ImageUpload({ onImageSelected, isLoading }: ImageUploadP
             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
               <button
                 onClick={clearImage}
-                disabled={isLoading}
+                disabled={isAnalyzing}
                 className="bg-trading-red/90 hover:bg-trading-red text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
               >
                 <X className="w-4 h-4" /> Remove Image
