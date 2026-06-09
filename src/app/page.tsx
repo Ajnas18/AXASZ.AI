@@ -61,9 +61,24 @@ export default function Home() {
       }
 
       setAnalysisResult(data);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Analysis error:', err);
-      setError(err.message || 'An unexpected error occurred during analysis.');
+      const errorObj = err instanceof Error ? err : new Error(String(err));
+      let errorMessage = errorObj.message || 'An unexpected error occurred during analysis.';
+      
+      try {
+        const jsonMatch = errorMessage.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          const parsedError = JSON.parse(jsonMatch[0]);
+          if (parsedError?.error?.message) {
+            errorMessage = parsedError.error.message;
+          }
+        }
+      } catch (e) {
+        // Not a JSON string, keep the original message
+      }
+
+      setError(errorMessage);
     } finally {
       setIsAnalyzing(false);
     }
@@ -93,7 +108,7 @@ export default function Home() {
             market structure, and generate professional trading recommendations instantly.
           </p>
           <p className="text-lg font-bold text-trading-green max-w-2xl mx-auto italic mb-12 bg-trading-green/10 border border-trading-green/20 py-3 px-6 rounded-full inline-block">
-            "Protect your capital first. Opportunities will always come again."
+            &quot;Protect your capital first. Opportunities will always come again.&quot;
           </p>
         </motion.div>
 

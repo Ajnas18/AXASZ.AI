@@ -124,7 +124,8 @@ Base your entry and exit points strictly on the price action and levels visible 
     const result = JSON.parse(responseText);
 
     return NextResponse.json(result);
-  } catch (error: any) {
+  } catch (err: unknown) {
+    const error = err instanceof Error ? err : new Error(String(err));
     console.error('Error analyzing chart:', error);
     return NextResponse.json(
       { error: error.message || 'Failed to analyze the trading chart' },
